@@ -42,11 +42,15 @@ bash ~/.asdf/plugins/nodejs/bin/import-release-team-keyring
 
 # Install latest Node.js LTS version
 echo "Installing latest Node.js LTS version..."
-asdf install nodejs lts
-asdf global nodejs lts
+asdf install nodejs latest
+asdf global nodejs latest
 
-# Verify Node.js installation
-echo "Verifying Node.js installation..."
+# Ensure npm is properly installed
+echo "Ensuring npm is installed..."
+npm install -g npm
+
+# Verify Node.js and npm installation
+echo "Verifying Node.js and npm installation..."
 node -v
 npm -v
 
