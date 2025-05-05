@@ -51,16 +51,26 @@ install_zsh_plugin() {
     local plugin_name=$1
     local plugin_url=$2
     local plugin_dir="${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/$plugin_name"
+    local parent_dir="$(dirname "$plugin_dir")"
+    
+    # Ensure parent directory exists
+    mkdir -p "$parent_dir"
     
     if [ ! -d "$plugin_dir" ]; then
         print_message "green" "Installing $plugin_name..."
-        run_in_zsh "git clone $plugin_url $plugin_dir"
-    elif [ ! -d "$plugin_dir/.git" ]; then
-        print_message "yellow" "$plugin_name directory exists but is not a git repository. Reinstalling..."
-        rm -rf "$plugin_dir"
-        run_in_zsh "git clone $plugin_url $plugin_dir"
+        if cd "$parent_dir" && git clone "$plugin_url" "$plugin_name"; then
+            print_message "green" "$plugin_name installed successfully."
+        else
+            print_message "red" "Failed to install $plugin_name."
+        fi
     else
-        print_message "yellow" "$plugin_name already installed. Skipping."
+        print_message "yellow" "$plugin_name directory exists. Cleaning and reinstalling..."
+        rm -rf "$plugin_dir"
+        if cd "$parent_dir" && git clone "$plugin_url" "$plugin_name"; then
+            print_message "green" "$plugin_name reinstalled successfully."
+        else
+            print_message "red" "Failed to reinstall $plugin_name."
+        fi
     fi
 }
 
@@ -255,14 +265,10 @@ if [[ $install_terminal == "Y" || $install_terminal == "y" ]]; then
     # Install Zsh plugins
     print_message "green" "Installing Zsh plugins..."
     
-    # zsh-autosuggestions
-    install_zsh_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions"
-    
-    # zsh-syntax-highlighting
+    # Install plugins using the new function
+    install_zsh_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions.git"
     install_zsh_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
-    
-    # zsh-completions
-    install_zsh_plugin "zsh-completions" "https://github.com/zsh-users/zsh-completions"
+    install_zsh_plugin "zsh-completions" "https://github.com/zsh-users/zsh-completions.git"
 
     # Create .zshrc configuration
     print_message "green" "Configuring Zsh..."
@@ -293,7 +299,17 @@ plugins=(
     extract
 )
 
+# Load Oh My Zsh
 source $ZSH/oh-my-zsh.sh
+
+# Load zsh-syntax-highlighting
+source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+
+# Load zsh-autosuggestions
+source ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+
+# Load zsh-completions
+fpath+=${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-completions/src
 
 # User configuration
 export EDITOR='nvim'
@@ -493,19 +509,14 @@ if [[ $install_languages == "Y" || $install_languages == "y" ]]; then
     print_message "green" "Installing additional programming languages..."
     
     # Python
-    asdf plugin-add python
+    asdf plugin add python
     asdf install python latest
-    asdf global python latest
-    
-    # Ruby
-    asdf plugin-add ruby
-    asdf install ruby latest
-    asdf global ruby latest
+    asdf set python latest
     
     # Go
-    asdf plugin-add golang
+    asdf plugin add golang
     asdf install golang latest
-    asdf global golang latest
+    asdf set golang latest
 fi
 
 # 11. Set up SSH keys (optional)
