@@ -13,11 +13,17 @@ A comprehensive setup script for MacBook Pro development environments, particula
 - Configures Git
 - Installs asdf version manager
 - Sets up Node.js and npm
-- Installs TypeScript
+- Installs TypeScript and related tools
+- Sets up a powerful terminal environment with:
+  - Oh My Zsh with Powerlevel10k theme
+  - Enhanced terminal tools (bat, eza, fzf, ripgrep, zoxide)
+  - Zsh plugins (autosuggestions, syntax highlighting, completions)
+  - Tmux configuration
+  - Neovim setup
 - Optional installations for:
-  - Visual Studio Code
-  - Oh My Zsh
-  - Additional development tools (Yarn, Docker)
+  - Visual Studio Code with essential extensions
+  - Additional development tools (Docker, Postman, etc.)
+  - Additional programming languages (Python, Go)
 
 ## 🚀 Installation
 
@@ -42,6 +48,15 @@ To set up a complete development environment on your MacBook Pro:
 ```
 
 The script will guide you through the installation process with interactive prompts for optional components.
+
+## 📚 Documentation
+
+For detailed guides on using the installed tools, see:
+
+- [Terminal Environment Guide](docs/terminal-guide.md)
+- [Version Management Guide](docs/version-management.md)
+- [Development Tools Guide](docs/dev-tools.md)
+- [Editor Setup Guide](docs/editor-setup.md)
 
 ## 🔧 Requirements
 
