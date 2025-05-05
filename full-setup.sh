@@ -22,6 +22,48 @@ command_exists() {
     command -v "$1" &> /dev/null
 }
 
+# Function to check if we're in zsh
+is_zsh() {
+    [ -n "$ZSH_VERSION" ]
+}
+
+# Function to run commands in zsh
+run_in_zsh() {
+    if ! is_zsh; then
+        print_message "yellow" "Switching to zsh for Oh My Zsh installation..."
+        # Create a temporary script with the commands
+        local temp_script=$(mktemp)
+        echo "#!/bin/zsh" > "$temp_script"
+        echo "source ~/.zshrc" >> "$temp_script"  # Ensure environment is loaded
+        echo "$*" >> "$temp_script"
+        chmod +x "$temp_script"
+        # Run the script and continue with the original script
+        zsh -c "$temp_script" && rm "$temp_script"
+    else
+        # If already in zsh, source the rc file first
+        source ~/.zshrc
+        eval "$*"
+    fi
+}
+
+# Function to install zsh plugin
+install_zsh_plugin() {
+    local plugin_name=$1
+    local plugin_url=$2
+    local plugin_dir="${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/$plugin_name"
+    
+    if [ ! -d "$plugin_dir" ]; then
+        print_message "green" "Installing $plugin_name..."
+        run_in_zsh "git clone $plugin_url $plugin_dir"
+    elif [ ! -d "$plugin_dir/.git" ]; then
+        print_message "yellow" "$plugin_name directory exists but is not a git repository. Reinstalling..."
+        rm -rf "$plugin_dir"
+        run_in_zsh "git clone $plugin_url $plugin_dir"
+    else
+        print_message "yellow" "$plugin_name already installed. Skipping."
+    fi
+}
+
 # Ensure we're in the home directory
 cd ~ 
 
@@ -180,7 +222,7 @@ if [[ $install_terminal == "Y" || $install_terminal == "y" ]]; then
     # Install Oh My Zsh
     if [ ! -d "$HOME/.oh-my-zsh" ]; then
         print_message "green" "Installing Oh My Zsh..."
-        sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended
+        run_in_zsh 'sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended'
     else
         print_message "yellow" "Oh My Zsh already installed. Skipping."
     fi
@@ -196,33 +238,31 @@ if [[ $install_terminal == "Y" || $install_terminal == "y" ]]; then
     # Install powerlevel10k theme
     if [ ! -d "${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k" ]; then
         print_message "green" "Installing powerlevel10k theme..."
-        git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
+        run_in_zsh 'git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k'
     else
         print_message "yellow" "powerlevel10k theme already installed. Skipping."
     fi
 
     # Install Nerd Font
     print_message "green" "Installing Nerd Font..."
-    brew tap homebrew/cask-fonts
-    brew install --cask font-hack-nerd-font
+    if ! brew list --cask | grep -q font-hack-nerd-font; then
+        print_message "green" "Installing Hack Nerd Font..."
+        brew install --cask font-hack-nerd-font
+    else
+        print_message "yellow" "Hack Nerd Font already installed. Skipping."
+    fi
 
     # Install Zsh plugins
     print_message "green" "Installing Zsh plugins..."
     
     # zsh-autosuggestions
-    if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions" ]; then
-        git clone https://github.com/zsh-users/zsh-autosuggestions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-autosuggestions
-    fi
+    install_zsh_plugin "zsh-autosuggestions" "https://github.com/zsh-users/zsh-autosuggestions"
     
     # zsh-syntax-highlighting
-    if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting" ]; then
-        git clone https://github.com/zsh-users/zsh-syntax-highlighting.git ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-syntax-highlighting
-    fi
+    install_zsh_plugin "zsh-syntax-highlighting" "https://github.com/zsh-users/zsh-syntax-highlighting.git"
     
     # zsh-completions
-    if [ ! -d "${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-completions" ]; then
-        git clone https://github.com/zsh-users/zsh-completions ${ZSH_CUSTOM:-~/.oh-my-zsh/custom}/plugins/zsh-completions
-    fi
+    install_zsh_plugin "zsh-completions" "https://github.com/zsh-users/zsh-completions"
 
     # Create .zshrc configuration
     print_message "green" "Configuring Zsh..."
@@ -369,67 +409,80 @@ read install_tools
 if [[ $install_tools == "Y" || $install_tools == "y" ]]; then
     # Version control and development tools
     for tool in gh hub tig; do
-        if command_exists $tool; then
-            print_message "yellow" "$tool already installed. Skipping."
-        else
+        if ! command_exists $tool; then
             print_message "green" "Installing $tool..."
-            brew install $tool
-        fi
-    done
-    # Database tools
-    for cask in postgres mongodb-compass; do
-        if brew list --cask | grep -q $cask; then
-            print_message "yellow" "$cask already installed. Skipping."
+            brew install $tool || print_message "red" "Failed to install $tool. Continuing..."
         else
-            print_message "green" "Installing $cask..."
-            brew install --cask $cask
+            print_message "yellow" "$tool already installed. Skipping."
         fi
     done
-    # API testing tools
-    if brew list --cask | grep -q postman; then
-        print_message "yellow" "postman already installed. Skipping."
+
+    # Database tools
+    print_message "green" "Installing database tools..."
+    if ! brew list --cask | grep -q postgres-unofficial; then
+        print_message "green" "Installing PostgreSQL..."
+        brew install --cask postgres-unofficial || print_message "red" "Failed to install PostgreSQL. Continuing..."
     else
-        print_message "green" "Installing postman..."
-        brew install --cask postman
+        print_message "yellow" "PostgreSQL already installed. Skipping."
     fi
+
+    if ! brew list --cask | grep -q mongodb-compass; then
+        print_message "green" "Installing MongoDB Compass..."
+        brew install --cask mongodb-compass || print_message "red" "Failed to install MongoDB Compass. Continuing..."
+    else
+        print_message "yellow" "MongoDB Compass already installed. Skipping."
+    fi
+
+    # API testing tools
+    if ! brew list --cask | grep -q postman; then
+        print_message "green" "Installing Postman..."
+        brew install --cask postman || print_message "red" "Failed to install Postman. Continuing..."
+    else
+        print_message "yellow" "Postman already installed. Skipping."
+    fi
+
     # Container tools
     for cask in docker; do
-        if brew list --cask | grep -q $cask; then
-            print_message "yellow" "$cask already installed. Skipping."
-        else
+        if ! brew list --cask | grep -q $cask; then
             print_message "green" "Installing $cask..."
-            brew install --cask $cask
-        fi
-    done
-    for tool in kubectl helm; do
-        if command_exists $tool; then
-            print_message "yellow" "$tool already installed. Skipping."
+            brew install --cask $cask || print_message "red" "Failed to install $cask. Continuing..."
         else
-            print_message "green" "Installing $tool..."
-            brew install $tool
+            print_message "yellow" "$cask already installed. Skipping."
         fi
     done
+
+    for tool in kubectl helm; do
+        if ! command_exists $tool; then
+            print_message "green" "Installing $tool..."
+            brew install $tool || print_message "red" "Failed to install $tool. Continuing..."
+        else
+            print_message "yellow" "$tool already installed. Skipping."
+        fi
+    done
+
     # Cloud tools
     for tool in awscli azure-cli google-cloud-sdk; do
-        if command_exists $tool; then
-            print_message "yellow" "$tool already installed. Skipping."
-        else
+        if ! command_exists $tool; then
             print_message "green" "Installing $tool..."
-            brew install $tool
+            brew install $tool || print_message "red" "Failed to install $tool. Continuing..."
+        else
+            print_message "yellow" "$tool already installed. Skipping."
         fi
     done
+
     # Security tools
-    if command_exists gpg; then
-        print_message "yellow" "gpg already installed. Skipping."
+    if ! command_exists gpg; then
+        print_message "green" "Installing GPG..."
+        brew install gpg || print_message "red" "Failed to install GPG. Continuing..."
     else
-        print_message "green" "Installing gpg..."
-        brew install gpg
+        print_message "yellow" "GPG already installed. Skipping."
     fi
-    if brew list --cask | grep -q 1password; then
-        print_message "yellow" "1password already installed. Skipping."
+
+    if ! brew list --cask | grep -q 1password; then
+        print_message "green" "Installing 1Password..."
+        brew install --cask 1password || print_message "red" "Failed to install 1Password. Continuing..."
     else
-        print_message "green" "Installing 1password..."
-        brew install --cask 1password
+        print_message "yellow" "1Password already installed. Skipping."
     fi
 fi
 
