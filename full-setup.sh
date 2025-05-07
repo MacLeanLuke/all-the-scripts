@@ -31,16 +31,17 @@ is_zsh() {
 run_in_zsh() {
     if ! is_zsh; then
         print_message "yellow" "Switching to zsh for Oh My Zsh installation..."
-        # Create a temporary script with the commands
-        local temp_script=$(mktemp)
+        # Create a temporary script with the Zsh command(s)
+        local temp_script
+        temp_script=$(mktemp)
         echo "#!/bin/zsh" > "$temp_script"
-        echo "source ~/.zshrc" >> "$temp_script"  # Ensure environment is loaded
-        echo "$*" >> "$temp_script"
+        echo "source ~/.zshrc" >> "$temp_script"  # Load Zsh environment
+        echo "$*" >> "$temp_script"              # Append the actual command
         chmod +x "$temp_script"
-        # Run the script and continue with the original script
-        zsh -c "$temp_script" && rm "$temp_script"
+        # Run the script using Zsh directly (NOT via zsh -c)
+        /bin/zsh "$temp_script"
+        rm "$temp_script"
     else
-        # If already in zsh, source the rc file first
         source ~/.zshrc
         eval "$*"
     fi
