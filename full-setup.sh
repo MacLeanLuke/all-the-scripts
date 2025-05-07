@@ -508,16 +508,30 @@ print_message "yellow" "Do you want to install additional programming languages?
 read install_languages
 if [[ $install_languages == "Y" || $install_languages == "y" ]]; then
     print_message "green" "Installing additional programming languages..."
-    
+
     # Python
-    asdf plugin add python
+    if ! asdf plugin list | grep -q python; then
+        asdf plugin add python
+    fi
     asdf install python latest
     asdf set python latest
-    
+
     # Go
-    asdf plugin add golang
+    if ! asdf plugin list | grep -q golang; then
+        asdf plugin add golang
+    fi
     asdf install golang latest
     asdf set golang latest
+
+    # Java
+    if ! asdf plugin list | grep -q java; then
+        print_message "green" "Adding Java plugin..."
+        asdf plugin add java https://github.com/halcyon/asdf-java.git
+    fi
+
+    print_message "green" "Installing latest Java (Temurin 17)..."
+    asdf install java temurin-17.0.10+7
+    asdf set java temurin-17.0.10+7
 fi
 
 # 11. Set up SSH keys (optional)
