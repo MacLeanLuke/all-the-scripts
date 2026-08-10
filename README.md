@@ -1,5 +1,23 @@
 # All The Scripts
 
+> ### ⚠️ Read before running
+>
+> `full-setup.sh` **replaces your `~/.zshrc` entirely.** It does not merge with
+> your existing configuration — it overwrites it. The script now takes a
+> timestamped backup first (`~/.zshrc.backup.<timestamp>`), but you should still
+> read it before running it.
+>
+> It also installs system software (Xcode Command Line Tools, Homebrew, asdf,
+> Oh My Zsh and a set of CLI tools), writes to your home directory, and is
+> **macOS-only** — it assumes Homebrew at `/opt/homebrew`, which is the Apple
+> Silicon path.
+>
+> **Known issue:** the script appends Homebrew and asdf initialization to
+> `~/.zshrc` early on, then overwrites the file later in the same run, so those
+> lines do not survive. After running it you may need to re-add
+> `eval "$(/opt/homebrew/bin/brew shellenv)"` and the asdf source line yourself.
+> See [issue #1](https://github.com/MacLeanLuke/all-the-scripts/issues/1).
+
 A collection of useful scripts for development environment setup and automation. These scripts are designed to make your development workflow more efficient and consistent.
 
 ## 📦 Available Scripts

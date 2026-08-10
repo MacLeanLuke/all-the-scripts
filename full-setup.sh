@@ -273,6 +273,16 @@ if [[ $install_terminal == "Y" || $install_terminal == "y" ]]; then
 
     # Create .zshrc configuration
     print_message "green" "Configuring Zsh..."
+
+    # This REPLACES ~/.zshrc wholesale, so keep a timestamped copy first.
+    # Without it, running this script silently destroys any existing shell
+    # configuration, and there is no way to get it back.
+    if [ -f ~/.zshrc ]; then
+        zshrc_backup=~/.zshrc.backup.$(date +%Y%m%d%H%M%S)
+        cp ~/.zshrc "$zshrc_backup"
+        print_message "yellow" "Existing ~/.zshrc backed up to $zshrc_backup"
+    fi
+
     cat > ~/.zshrc << 'EOL'
 # Enable Powerlevel10k instant prompt
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
