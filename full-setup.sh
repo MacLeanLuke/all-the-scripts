@@ -284,6 +284,21 @@ if [[ $install_terminal == "Y" || $install_terminal == "y" ]]; then
     fi
 
     cat > ~/.zshrc << 'EOL'
+# Homebrew. Must come first so everything installed by brew is on PATH for the
+# rest of this file. Written here rather than appended earlier in the script,
+# because this heredoc replaces ~/.zshrc wholesale and would otherwise destroy
+# it — which is exactly what used to happen.
+if [ -x /opt/homebrew/bin/brew ]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [ -x /usr/local/bin/brew ]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+fi
+
+# asdf version manager, sourced from wherever brew put it.
+if command -v brew >/dev/null 2>&1 && [ -f "$(brew --prefix asdf)/libexec/asdf.sh" ]; then
+  . "$(brew --prefix asdf)/libexec/asdf.sh"
+fi
+
 # Enable Powerlevel10k instant prompt
 if [[ -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"

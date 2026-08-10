@@ -12,11 +12,8 @@
 > **macOS-only** — it assumes Homebrew at `/opt/homebrew`, which is the Apple
 > Silicon path.
 >
-> **Known issue:** the script appends Homebrew and asdf initialization to
-> `~/.zshrc` early on, then overwrites the file later in the same run, so those
-> lines do not survive. After running it you may need to re-add
-> `eval "$(/opt/homebrew/bin/brew shellenv)"` and the asdf source line yourself.
-> See [issue #1](https://github.com/MacLeanLuke/all-the-scripts/issues/1).
+> It is **macOS-only** and handles both Apple Silicon (`/opt/homebrew`) and
+> Intel (`/usr/local`) Homebrew paths.
 
 A collection of useful scripts for development environment setup and automation. These scripts are designed to make your development workflow more efficient and consistent.
 
